@@ -1,0 +1,20 @@
+{
+  "name": "epub-css-fixer",
+  "version": "0.1.0",
+  "description": "EPUB CSS 檢查與安全修復 CLI",
+  "type": "module",
+  "bin": {
+    "epub-css-fixer": "./bin/epub-css-fixer.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "css-tree": "^3.1.0",
+    "jszip": "^3.10.1"
+  },
+  "license": "GPL-3.0-or-later"
+}
