@@ -7,6 +7,7 @@ const DENIED_PROPERTY_VALUES = new Map([
 ]);
 const UNSAFE_URL_RE = /url\(\s*(['"]?)(?:https?:\/\/|file:|res:\/)[^)]+\1\s*\)/i;
 const UNSAFE_IMPORT_RE = /@import\s+(?:url\(\s*(['"]?)(?:https?:\/\/|file:|res:\/)[^)]+\1\s*\)|(['"])(?:https?:\/\/|file:|res:\/).*?\2|(?:https?:\/\/|file:|res:\/)[^;]+)[^;]*;/gi;
+const ENTITY_FRAGMENT_RE = /&(?:#[0-9]+|#x[0-9a-f]+|[a-z][a-z0-9]+);?/i;
 
 function loc(node) {
   return {
@@ -38,11 +39,13 @@ function hasUnsafeUrl(value) {
   return UNSAFE_URL_RE.test(value);
 }
 
-function validateDeclaration(property, valueAst) {
+function validateDeclaration(property, valueAst, atruleName = null) {
   const prop = property.toLowerCase();
   if (prop.startsWith("-") || prop.startsWith("--")) return null;
   try {
-    const match = csstree.lexer.matchProperty(prop, valueAst);
+    const match = atruleName === "font-face"
+      ? csstree.lexer.matchAtruleDescriptor(atruleName, prop, valueAst)
+      : csstree.lexer.matchProperty(prop, valueAst);
     return match.error ? match.error.message : null;
   } catch (error) {
     return error.message;
@@ -86,6 +89,7 @@ export function fixDeclarationList(style) {
     const property = propertyPart.trim();
     const value = valueParts.join(":").trim();
     if (!property || !value) continue;
+    if (ENTITY_FRAGMENT_RE.test(value)) continue;
     if (isDeniedDeclaration(property, value) || hasUnsafeUrl(value)) continue;
     kept.push(`${property}: ${value}`);
   }
@@ -110,10 +114,11 @@ export function analyzeCss(css, options = {}) {
   const issues = [];
   try {
     const ast = csstree.parse(source, { positions: true });
-    csstree.walk(ast, (node) => {
+    csstree.walk(ast, function (node) {
       if (node.type !== "Declaration") return;
       const property = node.property;
       const value = propertyValue(node);
+      const atruleName = this.atrule?.name?.toLowerCase() || null;
       if (isDeniedDeclaration(property, value)) {
         issues.push({ type: "denied-declaration", file: options.file, property, value, ...loc(node), message: "已知 EPUB 高風險 CSS 宣告" });
         return;
@@ -122,7 +127,7 @@ export function analyzeCss(css, options = {}) {
         issues.push({ type: "unsafe-url", file: options.file, property, value, ...loc(node), message: "CSS 宣告引用遠端或本機裝置資源" });
         return;
       }
-      const error = validateDeclaration(property, node.value);
+      const error = validateDeclaration(property, node.value, atruleName);
       if (error) issues.push({ type: "invalid-value", file: options.file, property, value, ...loc(node), message: error });
     });
   } catch (error) {

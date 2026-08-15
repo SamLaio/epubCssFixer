@@ -24,3 +24,15 @@ test("inline style fixer removes unsafe declarations", () => {
   assert.equal(output.includes("text-indent: 2em"), true);
   assert.equal(output.includes("color: black"), true);
 });
+
+test("@font-face src is treated as a valid descriptor", () => {
+  const result = analyzeCss('@font-face{font-family:"Book";src:url("../fonts/book.otf") format("opentype");font-weight:400}');
+
+  assert.equal(result.ok, true);
+});
+
+test("@page margin declarations are treated as CSS properties", () => {
+  const result = analyzeCss("@page{margin-top:0px;margin-bottom:0px}");
+
+  assert.equal(result.ok, true);
+});

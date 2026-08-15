@@ -1,4 +1,4 @@
-# epubCssFixer 0.1.0
+# epubCssFixer 0.1.1
 
 `epubCssFixer` 是獨立的 EPUB CSS 檢查與安全修復工具。
 
@@ -77,7 +77,7 @@ node .\bin\epub-css-fixer.js --version
 
 ## 設計限制
 
-- v0.1.0 只做保守修復，不會自動刪除所有 CSS lexer 覺得可疑的宣告。
+- v0.1.1 只做保守修復，不會自動刪除所有 CSS lexer 覺得可疑的宣告。
 - CSS 語法完全壞掉時會回報 parse error，仍會嘗試做安全的 regex fallback 修復。
 - EPUB 打包會重新輸出 zip；`mimetype` 會以未壓縮方式寫入。
 

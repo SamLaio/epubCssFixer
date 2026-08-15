@@ -5,6 +5,13 @@ import { analyzeCss, analyzeDeclarationList, fixCss, fixDeclarationList } from "
 const CSS_FILE_RE = /\.css$/i;
 const HTML_FILE_RE = /\.(xhtml|html|htm)$/i;
 
+function escapeXmlAttribute(value) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+
 function scanHtmlCss(text, file) {
   const issues = [];
   for (const match of text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
@@ -26,7 +33,7 @@ function fixHtmlCss(text) {
   output = output.replace(/\sstyle=(["'])([\s\S]*?)\1/gi, (m, quote, style) => {
     const fixed = fixDeclarationList(style);
     if (fixed !== style) changed = true;
-    return fixed ? ` style=${quote}${fixed}${quote}` : "";
+    return fixed ? ` style="${escapeXmlAttribute(fixed)}"` : "";
   });
   return { text: output, changed };
 }
