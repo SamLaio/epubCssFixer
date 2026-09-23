@@ -60,6 +60,7 @@ export async function fixEpub(input, output) {
   const source = await loadZip(input);
   const target = new JSZip();
   const changes = [];
+  let beforeIssues = 0;
 
   for (const [name, entry] of Object.entries(source.files)) {
     if (entry.dir) {
@@ -69,13 +70,16 @@ export async function fixEpub(input, output) {
     let data = await entry.async("nodebuffer");
     if (CSS_FILE_RE.test(name)) {
       const original = data.toString("utf8");
-      const fixed = fixCss(original, { file: name }).css;
+      const result = fixCss(original, { file: name });
+      beforeIssues += result.issues.length + result.fixedIssues;
+      const fixed = result.css;
       if (fixed !== original) {
         data = Buffer.from(fixed, "utf8");
         changes.push(name);
       }
     } else if (HTML_FILE_RE.test(name)) {
       const original = data.toString("utf8");
+      beforeIssues += scanHtmlCss(original, name).length;
       const fixed = fixHtmlCss(original);
       if (fixed.changed) {
         data = Buffer.from(fixed.text, "utf8");
@@ -91,5 +95,5 @@ export async function fixEpub(input, output) {
   const buffer = await target.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
   await writeFile(output, buffer);
   const scan = await scanEpub(output);
-  return { ...scan, input, output, changedFiles: changes };
+  return { ...scan, input, output, changedFiles: changes, changed: changes.length > 0, fixedIssues: Math.max(0, beforeIssues - scan.totalIssues) };
 }

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -25,9 +26,14 @@ test("scan-epub and fix-epub handle CSS files, style blocks, and inline styles",
     const before = await scanEpub(input);
     assert.equal(before.ok, false);
     assert.equal(before.totalIssues, 4);
+    const checked = spawnSync(process.execPath, ["bin/epub-css-fixer.js", "scan-epub", input, "--json"], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+    assert.equal(checked.status, 2);
+    assert.equal(JSON.parse(checked.stdout).ok, false);
 
     const fixed = await fixEpub(input, output);
     assert.equal(fixed.ok, true);
+    assert.equal(fixed.changed, true);
+    assert.equal(fixed.fixedIssues, 4);
     assert.deepEqual(fixed.changedFiles.sort(), ["OPS/ch1.xhtml", "OPS/style.css"]);
 
     const zip = await JSZip.loadAsync(await readFile(output));

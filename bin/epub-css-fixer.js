@@ -4,7 +4,7 @@ import { basename } from "node:path";
 import { analyzeCss, fixCss } from "../src/css.js";
 import { fixEpub, scanEpub } from "../src/epub.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.2";
 
 function usage(exitCode = 0) {
   const text = `epubCssFixer ${VERSION}
@@ -27,6 +27,7 @@ function optionValue(args, name) {
 }
 
 function printResult(result, json) {
+  if (!result.ok) process.exitCode = 2;
   if (json) {
     console.log(JSON.stringify(result, null, 2));
     return;
