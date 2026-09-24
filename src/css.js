@@ -17,7 +17,7 @@ function loc(node) {
 }
 
 function normalizeCssText(css) {
-  return css.replace(/[^\S\r\n]+/g, " ").replace(/[％＃]/g, char => char === "％" ? "%" : "#").replace(/：/g, ":").replace(/\{\s*;+/g, "{");
+  return css.replace(/[^\S\r\n]+/g, " ").replace(/[％＃（）]/g, char => ({ "％": "%", "＃": "#", "（": "(", "）": ")" })[char]).replace(/：/g, ":").replace(/\{\s*;+/g, "{");
 }
 
 function propertyValue(node) {
@@ -60,6 +60,9 @@ function repairDeclarationProperty(property, value, atruleName = null) {
   if (prop === "dispaly") return "display";
   if (prop === "line-hegiht") return "line-height";
   if (prop === "hight") return "height";
+  if (prop === "margin-lft") return "margin-left";
+  if (prop === "cssword-break") return "word-break";
+  if (prop === "white-spack") return "white-space";
   if (prop === "mini-height") return "min-height";
   if (prop === "webkit-text-emphasis") return "-webkit-text-emphasis";
   if (prop === "text-decoration" && /^filled-sesame(?:\s*!important)?$/i.test(value.trim())) return "text-emphasis-style";
@@ -67,6 +70,7 @@ function repairDeclarationProperty(property, value, atruleName = null) {
   if (prop === "font-style" && /^\d+(?:\.\d+)?(?:px|em|rem|%|pt)$/i.test(value.trim().replace(/\s*!important\s*$/i, ""))) return "font-size";
   if (prop === "text-orientation" && /^vertical-(?:rl|lr)$/i.test(value.trim().replace(/\s*!important\s*$/i, ""))) return "writing-mode";
   if (prop === "text-align" && /^top$/i.test(value.trim().replace(/\s*!important\s*$/i, ""))) return "vertical-align";
+  if (prop === "text-align" && /^bottom$/i.test(value.trim().replace(/\s*!important\s*$/i, ""))) return "vertical-align";
   if (prop === "font-variant-east-asian" && /^salt(?:\s*!important)?$/i.test(value.trim())) return "font-feature-settings";
   if (prop === "border-style") {
     try {
@@ -83,11 +87,18 @@ function repairDeclarationValue(property, value, atruleName = null) {
   const raw = important ? value.slice(0, -important.length).trim() : value;
   const lower = raw.toLowerCase();
   if (property.toLowerCase() === "zy-fontsize-adjust") return null;
+  if (prop === "font" && /^(?:bold|italic|small-caps)\s+\d+(?:\.\d+)?%$/i.test(raw)) return null;
   if (prop === "text-emphasis-style" && lower === "filled-sesame") return `filled sesame${important}`;
   if (prop === "font-feature-settings" && lower === "salt") return `"salt" 1${important}`;
   if (property.toLowerCase() === "font-variation-settings" && /^(?:"|')?[a-z]{4}(?:"|')?$/i.test(raw)) return `"${raw.replace(/["']/g, "")}" 1${important}`;
   const typoFixed = raw.replace(/\btranspatrnt\b/gi, "transparent");
   if (typoFixed !== raw) return typoFixed + important;
+  const withoutRepeatedProperty = raw.replace(new RegExp(`^${prop}\\s*:\\s*`, "i"), "");
+  if (withoutRepeatedProperty !== raw) {
+    try {
+      if (!validateDeclaration(prop, csstree.parse(withoutRepeatedProperty, { context: "value" }), atruleName)) return withoutRepeatedProperty + important;
+    } catch { /* Keep unrepairable repeated fragments for the validation report. */ }
+  }
   if (["widows", "orphans"].includes(prop) && lower === "auto") return null;
   if (["max-height", "max-width"].includes(prop) && lower === "auto") return null;
   if (["widows", "orphans"].includes(prop) && /^\d+(?:\.\d+)?[a-z]+$/i.test(raw)) {
@@ -97,7 +108,10 @@ function repairDeclarationValue(property, value, atruleName = null) {
   if (prop === "font-family") {
     const candidate = raw
       .replace(/^\s*,\s*/, "")
+      .replace(/(?:^|,)\s*(?:inherit|initial|unset|revert(?:-layer)?)\s*(?=,|$)/gi, "")
       .replace(/(["'])(?=(?:serif|sans-serif|monospace|cursive|fantasy|system-ui)\b)/gi, "$1,")
+      .replace(/\b(serif|sans-serif|monospace|cursive|fantasy|system-ui)\s+(?=(?:serif|sans-serif|monospace|cursive|fantasy|system-ui)\b)/gi, "$1,")
+      .replace(/^\s*,\s*|\s*,\s*$/g, "")
       .replace(/,+$/, "");
     if (candidate !== raw) {
       try {
@@ -114,7 +128,8 @@ function repairDeclarationValue(property, value, atruleName = null) {
     // Remove invalid literals, preserving earlier cascade fallbacks and calc()/var().
     try {
       const parts = csstree.parse(raw, { context: "value" }).children.toArray();
-      if (prop !== spacing[1] && parts.length > 1) return null;
+      if (parts.length > 4 || (prop !== spacing[1] && parts.length > 1)) return null;
+      if (parts.some(part => part.type === "Identifier" && /^(?:em|rem|px|pt|pc|cm|mm|in|vh|vw|vmin|vmax)$/i.test(part.name))) return null;
       if (spacing[1] === "padding" && parts.some(part => part.type === "Identifier" && part.name.toLowerCase() === "auto")) return null;
       if (parts.every(part => ["Number", "Dimension", "Percentage"].includes(part.type) ||
           (part.type === "Identifier" && part.name.toLowerCase() === "auto")) &&
@@ -135,7 +150,7 @@ function repairDeclarationValue(property, value, atruleName = null) {
   if (["color", "background-color", "border-color"].includes(prop) && /^[0-9a-f]{6}$/i.test(raw)) {
     return `#${raw}${important}`;
   }
-  if (["width", "height", "font-size"].includes(prop) && /^:\s*\d+(?:\.\d+)?(?:px|em|rem|%|pt|vh|vw)$/i.test(raw)) {
+  if (/^:\s*\d+(?:\.\d+)?(?:px|em|rem|%|pt|vh|vw)$/i.test(raw)) {
     const candidate = raw.replace(/^:\s*/, "");
     try {
       if (!validateDeclaration(prop, csstree.parse(candidate, { context: "value" }), atruleName)) return candidate + important;
@@ -150,10 +165,12 @@ function repairDeclarationValue(property, value, atruleName = null) {
   const replacement = prop === "text-align" && lower === "middle" ? "center"
     : prop === "text-align" && lower === "justify-all" ? "justify"
     : prop === "text-align" && lower === "lift" ? "left"
+    : prop === "vertical-align" && lower === "bottom" ? "bottom"
     : prop === "vertical-align" && ["center", "duokan-middle-line"].includes(lower) ? "middle"
     : prop === "vertical-align" && lower === "text-baseline" ? "baseline"
     : prop === "font-weight" && lower === "blod" ? "bold"
     : prop === "text-justify" && lower === "inter-ideograph" ? "inter-character"
+    : prop === "text-justify" && lower === "distribute" ? "inter-character"
     : prop === "writing-mode" && lower === "horizontal" ? "horizontal-tb"
     : prop === "writing-mode" && lower === "vertical-tb" ? "vertical-rl"
     : ["background-position", "background-repeat"].includes(prop) && lower === "initial initial" ? "initial"
@@ -172,7 +189,7 @@ function repairDeclarationValue(property, value, atruleName = null) {
 
 export function analyzeDeclarationList(style, options = {}) {
   const issues = [];
-  for (const raw of style.split(";")) {
+  for (const raw of normalizeCssText(style).split(";")) {
     const decl = raw.trim();
     if (!decl || !decl.includes(":")) continue;
     const [propertyPart, ...valueParts] = decl.split(":");
@@ -200,7 +217,7 @@ export function analyzeDeclarationList(style, options = {}) {
 
 export function fixDeclarationList(style) {
   const kept = [];
-  for (const raw of style.split(";")) {
+  for (const raw of normalizeCssText(style).split(";")) {
     const decl = raw.trim();
     if (!decl || !decl.includes(":")) continue;
     const [propertyPart, ...valueParts] = decl.split(":");

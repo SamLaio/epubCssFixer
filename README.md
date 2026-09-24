@@ -1,8 +1,10 @@
-# epubCssFixer 0.1.1
+# epubCssFixer 0.1.3
 
-舊式 `text-justify: inter-ideograph` 以 `inter-character` 提供現行字間對齊相容寫法；`writing-mode: horizontal` 修為 `horizontal-tb`，不改動既有直排。負 padding 常值及非零缺單位的 margin/padding 宣告會移除，不猜測原作者想用的單位。動態 `calc()` / `var()`、先前合法宣告及合法負 margin 保留。參考 [CSS Text](https://www.w3.org/TR/css-text-3/#text-justify-property)、[CSS Box Model](https://www.w3.org/TR/css-box-3/#padding-physical) 與 [CSS Writing Modes](https://www.w3.org/TR/css-writing-modes-3/#block-flow)。
+舊式 `text-justify: inter-ideograph` 或 `distribute` 以 `inter-character` 提供現行字間對齊相容寫法；`writing-mode: horizontal` 修為 `horizontal-tb`，不改動既有直排。負 padding 常值及非零缺單位的 margin/padding 宣告會移除，不猜測原作者想用的單位。動態 `calc()` / `var()`、先前合法宣告及合法負 margin 保留。參考 [CSS Text](https://www.w3.org/TR/css-text-3/#text-justify-property)、[CSS Box Model](https://www.w3.org/TR/css-box-3/#padding-physical) 與 [CSS Writing Modes](https://www.w3.org/TR/css-writing-modes-3/#block-flow)。
 
-`widows`／`orphans` 的正整數若被誤加長度單位，會保留數字；帶小數長度與 `auto` 則移除。`font-family` 首尾多餘逗號會移除；`vertical-align: center` 與 `duokan-middle-line` 改為 `middle`，無效的 `vertical-align: right` 或 `0 auto` 移除。`text-align: justify-all` 改為 `justify`，`text-align: top` 改為等效的 `vertical-align: top`，舊式 `writing-mode: vertical-tb` 改為保留直排語意的 `vertical-rl`。無單位 `font-size` 補 `px`，`font-style` 誤填尺寸改為 `font-size`，`text-orientation` 誤填 `vertical-rl`／`vertical-lr` 改為 `writing-mode`。無效的 `float: top`、`float: center`、空 `quotes`、`inline-height`、Kindle 私有 `tb-*` 屬性、含 `auto` 的 padding、長邊距中的多值寫法與不存在的 `page-break` 屬性會刪除，效果與瀏覽器忽略該宣告一致。六位色碼缺少 `#` 時會補上；五位且各位相同的十六進位色碼會補成六位。明確的 `line-hegiht`／`hight` 拼字錯誤分別改為 `line-height`／`height`，誤把完整邊框縮寫寫在 `border-style` 時改回 `border`。
+`widows`／`orphans` 的正整數若被誤加長度單位，會保留數字；帶小數長度與 `auto` 則移除。`font-family` 首尾多餘逗號，以及逗號清單中誤放的未引號 CSS 全域關鍵字會移除；宣告值誤重複屬性前綴（如 `color: color: #00008B`）會保留有效的後段值。`vertical-align: center` 與 `duokan-middle-line` 改為 `middle`，無效的 `vertical-align: right` 或 `0 auto` 移除。`text-align: justify-all` 改為 `justify`，`text-align: top` 改為等效的 `vertical-align: top`，舊式 `writing-mode: vertical-tb` 改為保留直排語意的 `vertical-rl`。無單位 `font-size` 補 `px`，`font-style` 誤填尺寸改為 `font-size`，`text-orientation` 誤填 `vertical-rl`／`vertical-lr` 改為 `writing-mode`。無效的 `float: top`、`float: center`、空 `quotes`、`inline-height`、Kindle 私有 `tb-*` 屬性、含 `auto` 的 padding、超過四個值的 margin/padding、孤立長度單位與不存在的 `page-break` 屬性會刪除，效果與瀏覽器忽略該宣告一致。六位色碼缺少 `#` 時會補上；五位且各位相同的十六進位色碼會補成六位。明確的 `line-hegiht`／`hight`／`cssword-break`／`white-spack` 拼字錯誤分別改為 `line-height`／`height`／`word-break`／`white-space`，誤把完整邊框縮寫寫在 `border-style` 時改回 `border`。
+
+`text-align: top`／`bottom` 誤用於垂直對齊時，會改為等效的 `vertical-align: top`／`bottom`。
 
 `epubCssFixer` 是獨立的 EPUB CSS 檢查與安全修復工具。
 

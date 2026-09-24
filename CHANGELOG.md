@@ -1,5 +1,35 @@
 # Change Log
 
+## 0.1.3 - 2026-09-25
+
+- 將舊式 `text-justify: distribute` 改為標準 `inter-character`，保留東亞文字分散對齊語意。
+
+- 修正相鄰通用字族遺漏逗號的 `font-family` 清單，例如 `serif sans-serif`。
+
+- 修正常見拼寫錯誤 `margin-lft` 為 `margin-left`，並加入回歸測試。
+
+- 正規化 CSS 函式的全形括號，例如 `rgba（...）` 改為 `rgba(...)`，避免色彩與背景值被判定不合法。
+
+- inline `style` 也先套用 CSS 正規化，確保全形標點修復同時涵蓋樣式表與 XHTML 內嵌宣告。
+
+- 尺寸值前誤加單一冒號時，改為對任何 CSS 屬性驗證有效後才移除，例如 `margin-bottom: : 1.25em`。
+
+- 移除缺少必要字型家族的無效 `font` shorthand（如 `font: bold 100%`）；不猜測原字型，維持瀏覽器忽略該宣告的安全結果。
+
+- 修正轉檔遺留的 `cssword-break: break-all` 為標準 `word-break: break-all`；樣式表與 inline style 共用規則並加入回歸測試。
+
+- 修正 `white-spack: pre` 為標準 `white-space: pre`；樣式表與 inline style 共用規則並加入回歸測試。
+
+- `margin`／`padding` 值含孤立長度單位（如 `0 auto 0 em`）時移除整個無效宣告；不猜測遺失數值，與閱讀器忽略該宣告的結果一致，並加入回歸測試。
+
+- 將誤寫在 `text-align` 的 `top`／`bottom` 改為等效的 `vertical-align`，保留既有垂直對齊意圖並通過 CSS 驗證。
+
+- `margin`／`padding` shorthand 含超過四個常值時，移除整個無效宣告；CSS 無法可靠推斷第五個值的原始語意，保留等同瀏覽器忽略該宣告的行為。樣式表與 inline style 共用規則，加入回歸測試。
+
+- `font-family` 清單誤混入未引號的 `inherit`、`initial`、`unset`、`revert` 或 `revert-layer` 時，移除該無效清單項目並保留其他字型；單獨使用的全域值與引號內同名字型不變。加入回歸測試。
+
+- CSS 值誤重複目前屬性前綴時，驗證後保留有效後段值，例如 `color: color: #00008B` 改為 `color: #00008B`；無法驗證時維持原值交由報告處理。加入回歸測試。
+
 ## 0.1.2 - 2026-09-23
 
 - 將誤填於 `font-variant-east-asian` 的 OpenType `salt` 特徵改為 `font-feature-settings: "salt" 1`；補上字型名稱與緊接通用字族間遺漏的逗號，並移除無效的百分比 `border-width`。樣式表與行內樣式共用修復，避免 EPUB CSS 驗證殘留錯誤。

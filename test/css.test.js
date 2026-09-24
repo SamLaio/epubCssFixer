@@ -11,11 +11,11 @@ test("移除規則區塊開頭的空宣告分號", () => {
 });
 
 test("舊式對齊、橫排錯值及非法間距共用保守修復", () => {
-  const style = "text-justify:inter-ideograph!important;writing-mode:horizontal;padding-bottom:1em;padding-bottom:-.1em;padding:1em -2px;margin-left:-2em;margin:0.2;padding-inline:0 -1%;padding-top:calc(1em - 2px);padding-left:var(--pad)";
+  const style = "text-justify:inter-ideograph!important;text-justify:distribute;writing-mode:horizontal;padding-bottom:1em;padding-bottom:-.1em;padding:1em -2px;margin-left:-2em;margin:0.2;margin:0 auto 0 em;margin:3em 0 1em 0 0;padding-inline:0 -1%;padding-top:calc(1em - 2px);padding-left:var(--pad)";
   for (const result of [fixCss(`p{${style}}`).css, `p{${fixDeclarationList(style)}}`]) {
     assert.match(result, /inter-character\s*!important/);
     assert.match(result, /writing-mode:\s*horizontal-tb/);
-    assert.doesNotMatch(result, /inter-ideograph|padding-bottom:\s*-|padding:\s*1em -|padding-inline|margin:\s*0.2/);
+    assert.doesNotMatch(result, /inter-ideograph|distribute|padding-bottom:\s*-|padding:\s*1em -|padding-inline|margin:\s*0.2|margin:\s*0 auto 0 em|margin:\s*3em/);
     assert.match(result, /padding-bottom:\s*1em/);
     assert.match(result, /margin-left:\s*-2em/);
     assert.match(result, /calc\(/);
@@ -27,13 +27,14 @@ test("舊式對齊、橫排錯值及非法間距共用保守修復", () => {
 });
 
 test("修復計數屬性的誤加單位、字型首尾逗號及無效排版值", () => {
-  const style = "widows:1em;orphans:2px;font-family:serif,;font-family:,serif;float:top;vertical-align:center;page-break:avoid;color:black";
+  const style = "widows:1em;orphans:2px;font-family:serif,;font-family:,serif;font-family:\"Source Han Serif TW\",inherit;float:top;vertical-align:center;page-break:avoid;color:black";
   for (const result of [fixCss(`p{${style}}`).css, `p{${fixDeclarationList(style)}}`]) {
     assert.match(result, /widows:\s*1/);
     assert.match(result, /orphans:\s*2/);
     assert.match(result, /font-family:\s*serif/);
     assert.match(result, /vertical-align:\s*middle/);
-    assert.doesNotMatch(result, /1em|2px|serif,|float|page-break|vertical-align:\s*center/);
+    assert.doesNotMatch(result, /1em|2px|serif,|inherit|float|page-break|vertical-align:\s*center/);
+    assert.match(result, /Source Han Serif TW/);
     assert.equal(analyzeCss(result).ok, true);
 }
 
@@ -46,12 +47,13 @@ test("修復多看私有屬性與明確非法 CSS 值", () => {
 });
 
 test("修復缺井號色碼、空引號及明確拼錯的屬性", () => {
-  const style = 'border-color:ff0000;quotes:"","";orphans:auto;widows:auto;inline-height:.1em;vertical-align:right;line-hegiht:1.6em;border-style:solid 1px #6e5336';
+  const style = 'border-color:ff0000;color:color:#00008B;quotes:"","";orphans:auto;widows:auto;inline-height:.1em;vertical-align:right;line-hegiht:1.6em;border-style:solid 1px #6e5336';
   for (const result of [fixCss(`p{${style}}`).css, `p{${fixDeclarationList(style)}}`]) {
     assert.match(result, /border-color:\s*#ff0000/);
+    assert.match(result, /color:\s*#00008B/);
     assert.match(result, /line-height:\s*1.6em/);
     assert.match(result, /border:\s*solid 1px #6e5336/);
-    assert.doesNotMatch(result, /quotes|orphans|widows|inline-height|vertical-align|line-hegiht|border-style/);
+    assert.doesNotMatch(result, /color:\s*color|quotes|orphans|widows|inline-height|vertical-align|line-hegiht|border-style/);
     assert.equal(analyzeCss(result).ok, true);
   }
 });
@@ -123,7 +125,7 @@ test("移除誤放進 CSS 的表格屬性與無效最大尺寸", () => {
 });
 
 test("修復書庫常見 CSS 拼寫、錯置屬性與私有屬性", () => {
-  const style = "font-size:10;font-style:1.1em;vertical-align:text-baseline;text-orientation:vertical-rl;border-top:8px solid transpatrnt;hight:100px;text-align:lift;text-align:top;tb-text-size-fixed:yes;tb-vertical-align:45%";
+  const style = "font-size:10;font-style:1.1em;vertical-align:text-baseline;text-orientation:vertical-rl;border-top:8px solid transpatrnt;hight:100px;cssword-break:break-all;white-spack:pre;text-align:lift;text-align:top;text-align:bottom;tb-text-size-fixed:yes;tb-vertical-align:45%";
   for (const result of [fixCss(`p{${style}}`).css, `p{${fixDeclarationList(style)}}`]) {
     assert.match(result, /font-size:\s*10px/);
     assert.match(result, /font-size:\s*1.1em/);
@@ -131,9 +133,12 @@ test("修復書庫常見 CSS 拼寫、錯置屬性與私有屬性", () => {
     assert.match(result, /writing-mode:\s*vertical-rl/);
     assert.match(result, /border-top:\s*8px solid transparent/);
     assert.match(result, /height:\s*100px/);
+    assert.match(result, /word-break:\s*break-all/);
+    assert.match(result, /white-space:\s*pre/);
     assert.match(result, /text-align:\s*left/);
     assert.match(result, /vertical-align:\s*top/);
-    assert.doesNotMatch(result, /font-style|text-orientation|hight|text-align:\s*top|tb-/);
+    assert.match(result, /vertical-align:\s*bottom/);
+    assert.doesNotMatch(result, /font-style|text-orientation|hight|cssword-break|white-spack|text-align:\s*top|tb-/);
     assert.equal(analyzeCss(result).ok, true);
   }
 });
@@ -206,12 +211,24 @@ test("正規化全形 CSS 色碼井號", () => {
   assert.match(result.css, /color:#1E90FF/);
 });
 
+test("正規化全形 CSS 函式括號", () => {
+  const result = fixCss("p{background:rgba（246,243,238,0.4）}");
+  assert.equal(result.ok, true);
+  assert.match(result.css, /rgba\(246,243,238,0\.4\)/);
+});
+
 test("修正 mini-height 並移除誤放的 colspan", () => {
   const result = fixCss("p{mini-height:60px;colspan:4}");
 
   assert.equal(result.ok, true);
   assert.match(result.css, /min-height:60px/);
   assert.doesNotMatch(result.css, /mini-height|colspan/);
+});
+
+test("修正 margin-left 的常見拼寫錯誤", () => {
+  const result = fixCss("p{margin-lft:1.6em}");
+  assert.equal(result.ok, true);
+  assert.match(result.css, /margin-left:1.6em/);
 });
 
 test("修正遺漏開頭連字號的 WebKit 文字強調屬性", () => {
