@@ -120,6 +120,12 @@ function repairDeclarationValue(property, value, atruleName = null) {
     }
   }
   if (prop === "border-width" && /(?:^|\s)\d+(?:\.\d+)?%(?:\s|$)/.test(raw)) return null;
+  if (prop === "border-radius") {
+    try {
+      const parts = csstree.parse(raw, { context: "value" }).children.toArray();
+      if (parts.some(part => ["Number", "Dimension", "Percentage"].includes(part.type) && Number(part.value) < 0)) return null;
+    } catch { /* Keep dynamic or malformed values for the validation report. */ }
+  }
   if (prop === "quotes" && /^(?:""|'')(?:\s*,\s*(?:""|''))*$/.test(raw)) return null;
   if (prop === "float" && ["top", "center"].includes(lower)) return null;
   if (prop === "inline-height" || (prop === "vertical-align" && ["right", "0 auto"].includes(lower))) return null;

@@ -4,7 +4,7 @@
 
 ## 版本
 
-- 目前版本：`0.1.2`
+- 目前版本：`0.1.4`
 - 版本號來源：`package.json`
 - README、CHANGELOG、package.json 的描述要和實際 CLI 行為一致。
 

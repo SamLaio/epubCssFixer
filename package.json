@@ -1,6 +1,6 @@
 {
   "name": "epub-css-fixer",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "EPUB CSS 檢查與安全修復 CLI",
   "type": "module",
   "bin": {

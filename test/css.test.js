@@ -26,6 +26,16 @@ test("舊式對齊、橫排錯值及非法間距共用保守修復", () => {
   assert.equal(valid.css, "p{padding:-0em;margin:0 auto;writing-mode:vertical-rl}");
 });
 
+test("移除無效的負值圓角並保留動態圓角", () => {
+  for (const result of [fixCss("p{border-radius:-1em;border-radius:1em}").css, `p{${fixDeclarationList("border-radius:-1em;border-radius:1em")}}`]) {
+    assert.doesNotMatch(result, /border-radius:\s*-1em/);
+    assert.match(result, /border-radius:\s*1em/);
+    assert.equal(analyzeCss(result).ok, true);
+  }
+  const dynamic = fixCss("p{border-radius:calc(1em - 2px);border-radius:var(--radius)}");
+  assert.equal(dynamic.css, "p{border-radius:calc(1em - 2px);border-radius:var(--radius)}");
+});
+
 test("修復計數屬性的誤加單位、字型首尾逗號及無效排版值", () => {
   const style = "widows:1em;orphans:2px;font-family:serif,;font-family:,serif;font-family:\"Source Han Serif TW\",inherit;float:top;vertical-align:center;page-break:avoid;color:black";
   for (const result of [fixCss(`p{${style}}`).css, `p{${fixDeclarationList(style)}}`]) {

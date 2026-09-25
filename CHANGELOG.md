@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.4 - 2026-09-25
+
+- 移除 `border-radius: -1em` 一類無效的負值常數；保留 `calc()` 與 `var()` 動態值，避免猜測原始排版語意。樣式表與 XHTML inline style 共用此修復規則。
+
 ## 0.1.3 - 2026-09-25
 
 - 將舊式 `text-justify: distribute` 改為標準 `inter-character`，保留東亞文字分散對齊語意。
