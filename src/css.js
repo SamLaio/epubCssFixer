@@ -72,11 +72,15 @@ function repairDeclarationProperty(property, value, atruleName = null) {
   if (prop === "text-align" && /^top$/i.test(value.trim().replace(/\s*!important\s*$/i, ""))) return "vertical-align";
   if (prop === "text-align" && /^bottom$/i.test(value.trim().replace(/\s*!important\s*$/i, ""))) return "vertical-align";
   if (prop === "font-variant-east-asian" && /^salt(?:\s*!important)?$/i.test(value.trim())) return "font-feature-settings";
+  if (prop === "padding" && /^(top|right|bottom|left)\s*:/i.test(value.trim())) return `padding-${value.trim().match(/^(top|right|bottom|left)\s*:/i)[1].toLowerCase()}`;
   if (prop === "border-style") {
     try {
       const ast = csstree.parse(value, { context: "value" });
       if (validateDeclaration(prop, ast, atruleName) && !validateDeclaration("border", ast, atruleName)) return "border";
     } catch { /* Keep malformed declarations for the validation report. */ }
+  }
+  if (/^border-(?:top|right|bottom|left)-width$/.test(prop) && /^(?:dashed|dotted|solid|double)\s+\d+(?:\.\d+)?(?:px|em|rem|pt)(?:\s*!important)?$/i.test(value.trim())) {
+    return prop.replace(/-width$/, "");
   }
   return property;
 }
@@ -86,6 +90,10 @@ function repairDeclarationValue(property, value, atruleName = null) {
   const important = value.match(/\s*!important\s*$/i)?.[0] || "";
   const raw = important ? value.slice(0, -important.length).trim() : value;
   const lower = raw.toLowerCase();
+  if (/^#(?:[0-9A-Fa-fＡ-Ｆａ-ｆ]{3}|[0-9A-Fa-fＡ-Ｆａ-ｆ]{4}|[0-9A-Fa-fＡ-Ｆａ-ｆ]{6}|[0-9A-Fa-fＡ-Ｆａ-ｆ]{8})$/.test(raw)) {
+    const color = raw.replace(/[Ａ-Ｆａ-ｆ]/g, char => String.fromCodePoint(char.codePointAt(0) - 0xFEE0));
+    if (color !== raw && !validateDeclaration(prop, csstree.parse(color, { context: "value" }), atruleName)) return color + important;
+  }
   if (property.toLowerCase() === "zy-fontsize-adjust") return null;
   if (prop === "font" && /^(?:bold|italic|small-caps)\s+\d+(?:\.\d+)?%$/i.test(raw)) return null;
   if (prop === "text-emphasis-style" && lower === "filled-sesame") return `filled sesame${important}`;
@@ -98,6 +106,10 @@ function repairDeclarationValue(property, value, atruleName = null) {
     try {
       if (!validateDeclaration(prop, csstree.parse(withoutRepeatedProperty, { context: "value" }), atruleName)) return withoutRepeatedProperty + important;
     } catch { /* Keep unrepairable repeated fragments for the validation report. */ }
+  }
+  if (/^padding-(?:top|right|bottom|left)$/.test(prop)) {
+    const candidate = raw.replace(/^(?:top|right|bottom|left)\s*:\s*/i, "");
+    if (candidate !== raw) return candidate + important;
   }
   if (["widows", "orphans"].includes(prop) && lower === "auto") return null;
   if (["max-height", "max-width"].includes(prop) && lower === "auto") return null;

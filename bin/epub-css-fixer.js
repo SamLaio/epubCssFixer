@@ -4,7 +4,7 @@ import { basename } from "node:path";
 import { analyzeCss, fixCss } from "../src/css.js";
 import { fixEpub, scanEpub } from "../src/epub.js";
 
-const VERSION = "0.1.2";
+const VERSION = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")).version;
 
 function usage(exitCode = 0) {
   const text = `epubCssFixer ${VERSION}

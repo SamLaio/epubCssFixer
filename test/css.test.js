@@ -10,6 +10,23 @@ test("移除規則區塊開頭的空宣告分號", () => {
   assert.equal(analyzeCss(result.css).ok, true);
 });
 
+test("正規化色碼內的全形十六進位字母", () => {
+  for (const result of [fixCss("p{color:#dＣＤＣＤc}").css, `p{${fixDeclarationList("color:#dＣＤＣＤc")}}`]) {
+    assert.match(result, /#dCDCDc/);
+    assert.equal(analyzeCss(result).ok, true);
+  }
+});
+
+test("色碼修復保留選擇器、字串與資源片段，掃描仍指出原始錯誤", () => {
+  assert.equal(analyzeCss("p{color:#dＣＤＣＤc}").ok, false);
+  const result = fixCss('#dＣＤＣＤc{content:"#dＣＤＣＤc";background:url(#dＣＤＣＤc);color:#dＣＤＣＤc}');
+  assert.match(result.css, /#dＣＤＣＤc\{/);
+  assert.match(result.css, /content:"#dＣＤＣＤc"/);
+  assert.match(result.css, /url\(#dＣＤＣＤc\)/);
+  assert.match(result.css, /color:#dCDCDc/);
+  assert.equal(result.fixedIssues, 1);
+});
+
 test("舊式對齊、橫排錯值及非法間距共用保守修復", () => {
   const style = "text-justify:inter-ideograph!important;text-justify:distribute;writing-mode:horizontal;padding-bottom:1em;padding-bottom:-.1em;padding:1em -2px;margin-left:-2em;margin:0.2;margin:0 auto 0 em;margin:3em 0 1em 0 0;padding-inline:0 -1%;padding-top:calc(1em - 2px);padding-left:var(--pad)";
   for (const result of [fixCss(`p{${style}}`).css, `p{${fixDeclarationList(style)}}`]) {
@@ -121,6 +138,20 @@ test("修復文字縮排、邊框色零值與五位色碼", () => {
     assert.match(result, /text-indent:\s*2em/);
     assert.match(result, /color:\s*#566566/);
     assert.doesNotMatch(result, /border-bottom-color|#56656(?:[;}])/);
+    assert.equal(analyzeCss(result).ok, true);
+  }
+});
+
+test("修復誤寫在單邊寬度的邊框樣式", () => {
+  for (const result of [fixCss("p{border-bottom-width:dashed 2px}").css, `p{${fixDeclarationList("border-bottom-width:dotted 3px")}}`]) {
+    assert.match(result, /border-bottom:\s*(?:dashed 2px|dotted 3px)/);
+    assert.equal(analyzeCss(result).ok, true);
+  }
+});
+
+test("修復誤拆進 padding 值的單邊方向", () => {
+  for (const result of [fixCss("p{padding:left:10px}").css, `p{${fixDeclarationList("padding:right:2em")}}`]) {
+    assert.match(result, /padding-(?:left|right):\s*(?:10px|2em)/);
     assert.equal(analyzeCss(result).ok, true);
   }
 });

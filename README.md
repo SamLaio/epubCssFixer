@@ -1,4 +1,4 @@
-# epubCssFixer 0.1.4
+# epubCssFixer 0.1.5
 
 舊式 `text-justify: inter-ideograph` 或 `distribute` 以 `inter-character` 提供現行字間對齊相容寫法；`writing-mode: horizontal` 修為 `horizontal-tb`，不改動既有直排。負 padding 與 `border-radius` 常值及非零缺單位的 margin/padding 宣告會移除，不猜測原作者想用的單位。動態 `calc()` / `var()`、先前合法宣告及合法負 margin 保留。參考 [CSS Text](https://www.w3.org/TR/css-text-3/#text-justify-property)、[CSS Box Model](https://www.w3.org/TR/css-box-3/#padding-physical) 與 [CSS Writing Modes](https://www.w3.org/TR/css-writing-modes-3/#block-flow)。
 
@@ -35,6 +35,7 @@
 
 - 全形百分比 `％` -> `%`
 - 全形冒號 `：` -> `:`
+- 修復時將可驗證的單一色碼值內全形十六進位字母正規化，例如 `#dＣＤＣＤc` -> `#dCDCDc`；保留選擇器、字串與 URL 片段，掃描仍會回報原始無效色碼。
 - CSS 規則區塊開頭多餘的空宣告分號，例如 `{;color: ...}` -> `{color: ...}`
 
 ## 使用方式
@@ -49,6 +50,8 @@
 - 將誤放在 `text-decoration` 的 `filled-sesame` 改為 `text-emphasis-style: filled sesame`，保留日文／中文著重點效果。
 - `size` 只作為 `@page` 描述子保留，移除誤放在普通樣式中的 `size`。
 - 將誤放在 `font-variant-east-asian` 的 `salt` 改為 OpenType 標準 `font-feature-settings: "salt" 1`；補齊字型名稱與通用字族之間遺漏的逗號，並移除無效的百分比 `border-width`。
+- 單邊 `border-*-width` 誤含 `dashed`、`dotted`、`solid` 或 `double` 樣式與長度時，改為對應的 `border-*` 縮寫，保留線條樣式與寬度。
+- `padding: left:10px` 一類誤拆的方向和值會改為對應的 `padding-left: 10px`。
 - 保留合法字串及 `var()`；後者的計算結果不在靜態 lexer 驗證範圍，不誤報為語法錯誤。
 - JSON `ok: false` 或 CLI 結束碼 `2` 表示仍有問題，即使已輸出 EPUB，也不可當成驗證通過。
   `fix-epub` 另回傳 `changed` 與 `fixedIssues`，供批次流程正確統計。

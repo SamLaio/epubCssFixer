@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.1.5 - 2026-09-30
+
+- CLI 版本直接讀取 `package.json`，修正 `--version` 長期顯示舊版號的問題。
+
+- 修復可驗證的單一 CSS 色碼值內全形十六進位字母，例如 `#dＣＤＣＤc` 改為 `#dCDCDc`；樣式表與 XHTML inline style 共用此規則。保留選擇器、字串與 URL 片段，掃描正確回報原始錯誤。
+- 修正單邊 `border-*-width` 誤含線條樣式及長度（如 `border-bottom-width: dashed 2px`）：改用對應的 `border-*` 縮寫，保留原本線條語意；樣式表與 inline style 共用規則並加入回歸測試。
+- 修正 `padding: left:10px` 一類將方向誤拆入值的宣告為對應單邊 padding；樣式表與 inline style 共用規則並加入回歸測試。
+
 ## 0.1.4 - 2026-09-25
 
 - 移除 `border-radius: -1em` 一類無效的負值常數；保留 `calc()` 與 `var()` 動態值，避免猜測原始排版語意。樣式表與 XHTML inline style 共用此修復規則。
