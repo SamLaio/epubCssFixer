@@ -11,8 +11,8 @@ async function writeSampleEpub(path) {
   const zip = new JSZip();
   zip.file("mimetype", "application/epub+zip", { compression: "STORE" });
   zip.file("META-INF/container.xml", "<container/>");
-  zip.file("OPS/style.css", ".a{text-spacing-trim:trim-start;color:black}");
-  zip.file("OPS/ch1.xhtml", '<html><head><style>.b{text-combine:horizontal}</style></head><body><p style="duokan-text-indent:0;color:black">x</p><div style="font-family: &#34;; color: blue">y</div></body></html>');
+  zip.file("OPS/style.css", ".a{text-spacing-trim:trim-start;color:black}/* [InDesign專用：預設框架] */.def-div{margin:0}.def-paragraph{padding:0}/* 一般 */.keep{color:blue}");
+  zip.file("OPS/ch1.xhtml", '<html><head><style>.b{text-combine:horizontal}/* [InDesign專用：註腳編號] */._idFootnoteLink{font-size:0.6rem}</style></head><body><p style="duokan-text-indent:0;color:black">x</p><div style="font-family: &#34;; color: blue">y</div></body></html>');
   await writeFile(path, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
 }
 
@@ -37,10 +37,14 @@ test("scan-epub and fix-epub handle CSS files, style blocks, and inline styles",
     assert.deepEqual(fixed.changedFiles.sort(), ["OPS/ch1.xhtml", "OPS/style.css"]);
 
     const zip = await JSZip.loadAsync(await readFile(output));
-    assert.equal((await zip.file("OPS/style.css").async("string")).includes("text-spacing-trim"), false);
+    const css = await zip.file("OPS/style.css").async("string");
+    assert.equal(css.includes("text-spacing-trim"), false);
+    assert.doesNotMatch(css, /\.def-div|\.def-paragraph/);
+    assert.match(css, /\.keep/);
     const xhtml = await zip.file("OPS/ch1.xhtml").async("string");
     assert.equal(xhtml.includes("duokan-text-indent"), false);
     assert.equal(xhtml.includes("&#34"), false);
+    assert.doesNotMatch(xhtml, /\._idFootnoteLink/);
     assert.match(xhtml, /style="color: blue"/);
   } finally {
     await rm(dir, { recursive: true, force: true });

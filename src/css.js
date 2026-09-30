@@ -300,6 +300,18 @@ export function fixCss(css, options = {}) {
   let parserFallback = false;
   try {
     const ast = csstree.parse(source, { positions: true });
+    const inDesignRules = [];
+    let previousEnd = 0;
+    let inDesignSection = false;
+    ast.children.forEach((node, item) => {
+      const preceding = source.slice(previousEnd, node.loc.start.offset);
+      const comments = [...preceding.matchAll(/\/\*[\s\S]*?\*\//g)];
+      if (comments.length) inDesignSection = /^\/\*\s*[\[【［]\s*InDesign\s*專用[^*]*[\]】］]\s*\*\/$/i.test(comments.at(-1)[0]);
+      if (node.type === "Rule" && inDesignSection) inDesignRules.push(item);
+      if (node.type !== "Rule") inDesignSection = false;
+      previousEnd = node.loc.end.offset;
+    });
+    for (const item of inDesignRules) ast.children.remove(item);
     csstree.walk(ast, {
       enter(node, item, list) {
         if (node.type === "Atrule" && node.name.toLowerCase() === "import" && UNSAFE_IMPORT_RE.test(csstree.generate(node))) {

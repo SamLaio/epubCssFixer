@@ -27,6 +27,33 @@ test("色碼修復保留選擇器、字串與資源片段，掃描仍指出原�
   assert.equal(result.fixedIssues, 1);
 });
 
+test("清除 InDesign 專用註記區段並保留一般樣式", () => {
+  const css = `a:focus,a:active { color: #0000ff; }
+/* [InDesign專用：預設框架] */
+.def-div { margin: 0; padding: 0; }
+.def-paragraph { margin: 0; padding: 0; }
+.def-image {}
+/* 【InDesign專用：註腳段落前面的分隔線】 */
+.HorizontalRule-1 { border-width: var(--bdw-custom); }
+/* [InDesign專用：註腳參照編號] */
+._idFootnoteLink { font-size: 0.6rem; }
+/* [InDesign專用：註腳文字前方編號] */
+._idFootnoteAnchor { font-size: 0.8em; }
+/* 一般註記 */
+.ordinary { display: block; }`;
+  const result = fixCss(css);
+  assert.equal(result.ok, true);
+  assert.match(result.css, /a:focus,a:active/);
+  assert.match(result.css, /\.ordinary/);
+  assert.doesNotMatch(result.css, /\.def-div|\.def-paragraph|\.def-image|\.HorizontalRule-1|\._idFootnoteLink|\._idFootnoteAnchor/);
+});
+
+test("其他註記或隔開的 InDesign 規則不觸發清除", () => {
+  const result = fixCss("/* [InDesign專用：框架] */\n/* 另有說明 */\n.def-div{margin:0}\n.HorizontalRule-1{border:0}");
+  assert.match(result.css, /\.def-div/);
+  assert.match(result.css, /\.HorizontalRule-1/);
+});
+
 test("舊式對齊、橫排錯值及非法間距共用保守修復", () => {
   const style = "text-justify:inter-ideograph!important;text-justify:distribute;writing-mode:horizontal;padding-bottom:1em;padding-bottom:-.1em;padding:1em -2px;margin-left:-2em;margin:0.2;margin:0 auto 0 em;margin:3em 0 1em 0 0;padding-inline:0 -1%;padding-top:calc(1em - 2px);padding-left:var(--pad)";
   for (const result of [fixCss(`p{${style}}`).css, `p{${fixDeclarationList(style)}}`]) {
