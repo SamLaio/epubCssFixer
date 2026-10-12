@@ -5,6 +5,20 @@ import { analyzeCss, analyzeDeclarationList, fixCss, fixDeclarationList } from "
 const CSS_FILE_RE = /\.css$/i;
 const HTML_FILE_RE = /\.(xhtml|html|htm)$/i;
 
+// XHTML 的 style 是 XML 文字；HTML raw-text 與 CDATA 不解碼實體。
+function styleText(css, text, file) {
+  const xml = /\.xhtml$/i.test(file) || /<html\b[^>]*\bxmlns=["']http:\/\/www\.w3\.org\/1999\/xhtml["']/i.test(text);
+  const cdata = xml && /^\s*<!\[CDATA\[([\s\S]*)\]\]>\s*$/.exec(css);
+  if (cdata) return { css: cdata[1], xml: false, cdata: true };
+  if (!xml || css.includes("<![CDATA[")) return { css, xml: false };
+  const entities = { lt: "<", gt: ">", amp: "&", quot: '"', apos: "'" };
+  return { xml: true, css: css.replace(/&(lt|gt|amp|quot|apos|#\d+|#x[\da-f]+);/gi, (raw, entity) => {
+    if (!entity.startsWith("#")) return entities[entity] ?? raw;
+    const code = entity[1].toLowerCase() === "x" ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
+    return code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : raw;
+  }) };
+}
+
 function escapeXmlAttribute(value) {
   return value
     .replace(/&/g, "&amp;")
@@ -14,8 +28,8 @@ function escapeXmlAttribute(value) {
 
 function scanHtmlCss(text, file) {
   const issues = [];
-  for (const match of text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
-    issues.push(...analyzeCss(match[1], { file }).issues);
+  for (const match of text.matchAll(/<style\b(?![^>]*\/\s*>)[^>]*>([\s\S]*?)<\/style>/gi)) {
+    issues.push(...analyzeCss(styleText(match[1], text, file).css, { file }).issues);
   }
   for (const match of text.matchAll(/\sstyle=(["'])([\s\S]*?)\1/gi)) {
     issues.push(...analyzeDeclarationList(match[2], { file }));
@@ -23,10 +37,13 @@ function scanHtmlCss(text, file) {
   return issues;
 }
 
-function fixHtmlCss(text) {
+function fixHtmlCss(text, file) {
   let changed = false;
-  let output = text.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi, (_m, open, css, close) => {
-    const fixed = fixCss(css).css;
+  let output = text.replace(/(<style\b(?![^>]*\/\s*>)[^>]*>)([\s\S]*?)(<\/style>)/gi, (_m, open, css, close) => {
+    const decoded = styleText(css, text, file);
+    let fixed = fixCss(decoded.css).css;
+    if (decoded.xml) fixed = fixed.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (decoded.cdata) fixed = `<![CDATA[${fixed}]]>`;
     if (fixed !== css) changed = true;
     return `${open}${fixed}${close}`;
   });
@@ -80,7 +97,7 @@ export async function fixEpub(input, output) {
     } else if (HTML_FILE_RE.test(name)) {
       const original = data.toString("utf8");
       beforeIssues += scanHtmlCss(original, name).length;
-      const fixed = fixHtmlCss(original);
+      const fixed = fixHtmlCss(original, name);
       if (fixed.changed) {
         data = Buffer.from(fixed.text, "utf8");
         changes.push(name);
