@@ -26,14 +26,27 @@ function escapeXmlAttribute(value) {
     .replace(/</g, "&lt;");
 }
 
+function replaceInlineStyles(text, replace) {
+  // 跳脫的標籤及其他屬性值是文字，不能用全文style正規式改寫。
+  const tokens = /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<(script|style)\b(?:"[^"]*"|'[^']*'|[^'">])*?>[\s\S]*?<\/\1\s*>|<[A-Za-z][\w:.-]*(?:"[^"]*"|'[^']*'|[^'">])*?>/gi;
+  return text.replace(tokens, (tag) => {
+    if (/^<(!|script\b|style\b)/i.test(tag)) return tag;
+    return tag.replace(/\s+([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|[^\s"'=<>`]+))?/g, (attribute, name, double, single) => {
+      if (name.toLowerCase() !== 'style' || (double === undefined && single === undefined)) return attribute;
+      return replace(attribute, double ?? single);
+    });
+  });
+}
+
 function scanHtmlCss(text, file) {
   const issues = [];
   for (const match of text.matchAll(/<style\b(?![^>]*\/\s*>)[^>]*>([\s\S]*?)<\/style>/gi)) {
     issues.push(...analyzeCss(styleText(match[1], text, file).css, { file }).issues);
   }
-  for (const match of text.matchAll(/\sstyle=(["'])([\s\S]*?)\1/gi)) {
-    issues.push(...analyzeDeclarationList(match[2], { file }));
-  }
+  replaceInlineStyles(text, (attribute, style) => {
+    issues.push(...analyzeDeclarationList(style, { file }));
+    return attribute;
+  });
   return issues;
 }
 
@@ -47,7 +60,7 @@ function fixHtmlCss(text, file) {
     if (fixed !== css) changed = true;
     return `${open}${fixed}${close}`;
   });
-  output = output.replace(/\sstyle=(["'])([\s\S]*?)\1/gi, (m, quote, style) => {
+  output = replaceInlineStyles(output, (attribute, style) => {
     const fixed = fixDeclarationList(style);
     if (fixed !== style) changed = true;
     return fixed ? ` style="${escapeXmlAttribute(fixed)}"` : "";

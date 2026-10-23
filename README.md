@@ -1,4 +1,12 @@
-# epubCssFixer 0.1.7
+# epubCssFixer 0.1.8
+
+清除實檔核實的 Word 表格樣式私有 `mso-style-name/noshow/unhide/parent`、`mso-tstyle-rowband-size/colband-size`、`mso-padding-alt`、`mso-pagination`、`mso-para-margin`／`mso-para-margin-bottom` 及舊 `layout-grid-mode`；不泛化刪除未知 mso 屬性。舊 `text-autospace:none` 改為標準 `no-autospace`，保留優先權。
+
+單一命名色誤加井號（如 `border-left-color:#black`）僅在原值無效、去井號後為標準命名色且通過該屬性驗證時修正。合法十六進位色碼、未知名稱、字串、URL及自訂屬性不變。
+
+行內樣式只讀取真正起始標籤的 `style` 屬性；跳脫的 HTML 範例、註解、CDATA、script／style 內容，以及其他屬性值內的 `style="..."` 文字不當作行內 CSS。掃描與修復共用同一屬性定位，保留正文可見文字。
+
+非法 `text-align:cener` 只移除，不猜成置中；保留合法對齊級聯、自訂屬性與字串。
 
 依 [W3C CSS Text 4](https://www.w3.org/TR/css-text-4/#hyphenation) 驗證 `hyphenate-limit-lines`、`hyphenate-limit-zone`、`hyphenate-limit-last`；合法斷字設定保留，非法值及未知屬性仍回報，不因語法資料庫未收錄而刪除。
 

@@ -2,6 +2,18 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { analyzeCss, analyzeDeclarationList, fixCss, fixDeclarationList } from "../src/css.js";
 
+test("只移除非法cener對齊，不猜center且保留字串與自訂屬性", () => {
+  const style='text-align:left;text-align:CENER!important;--align:cener;content:"cener"';
+  for (const css of [fixCss(`p{${style}}`).css,`p{${fixDeclarationList(style)}}`]) {
+    assert.doesNotMatch(css,/text-align:\s*cener/i);
+    assert.match(css,/text-align:\s*left/);
+    assert.match(css,/--align:\s*cener/);
+    assert.match(css,/content:\s*"cener"/);
+    assert.equal(analyzeCss(css).ok,true);
+    assert.equal(fixCss(fixCss(css).css).css,fixCss(css).css);
+  }
+});
+
 test("只移除非法text-justify拼字，不猜對齊且保留合法級聯", () => {
   const style='text-justify:inter-character;text-justify:inter-ideogrph!important;--justify:inter-ideogrph;content:"inter-ideogrph"';
   for (const css of [fixCss(`p{${style}}`).css,`p{${fixDeclarationList(style)}}`]) {

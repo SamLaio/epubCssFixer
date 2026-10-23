@@ -39,6 +39,7 @@ function isDeniedDeclaration(property, value) {
   const prop = property.toLowerCase();
   if (prop === "duokan-text-align") return true;
   if (prop === "adobe-hyphenate") return true;
+  if (prop === "layout-grid-mode" || /^mso-(?:style-(?:name|noshow|unhide|parent)|tstyle-(?:rowband|colband)-size|padding-alt|pagination|para-margin(?:-bottom)?)$/.test(prop)) return true;
   if (prop === "punctuation-wrap" || /^mso-(?:bidi-font-family|(?:hansi|ascii|fareast)-(?:font-family|theme-font))$/.test(prop)) return true;
   if (["text-stroke", "text-stroke-width", "text-stroke-color"].includes(prop)) return true;
   if (DENIED_PROPERTIES.has(prop) || prop.startsWith("tb-")) return true;
@@ -138,6 +139,13 @@ function repairDeclarationValue(property, value, atruleName = null) {
   const important = value.match(/\s*!important\s*$/i)?.[0] || "";
   const raw = important ? value.slice(0, -important.length).trim() : value;
   const lower = raw.toLowerCase();
+  if (prop === "text-autospace" && lower === "none") return `no-autospace${important}`;
+  if ((prop === "color" || prop.endsWith("-color")) && /^#[a-z]+$/i.test(raw)) {
+    const candidate = raw.slice(1);
+    if (validateDeclaration(prop, csstree.parse(raw, { context: "value" }), atruleName) &&
+        csstree.lexer.matchType("named-color", candidate).matched &&
+        !validateDeclaration(prop, csstree.parse(candidate, { context: "value" }), atruleName)) return candidate + important;
+  }
   if (prop === "color" && lower === "windowtext") return `CanvasText${important}`;
   if (prop === "text-justify" && lower === "inter-ideogrph") return null;
   if (prop === "margin-block" && /(?:^|\s)[+-]?\d+\.(?:px|em|rem|pt|%)(?=\s|$)/i.test(raw)) return null;
@@ -170,7 +178,7 @@ function repairDeclarationValue(property, value, atruleName = null) {
   if (prop === "font-weight" && lower === "auto" && atruleName !== "font-face") return null;
   // none 不是縮排／首選尺寸的合法值；移除以維持原本忽略宣告的級聯。
   if (["text-indent", "height", "width"].includes(prop) && lower === "none") return null;
-  if (prop === "text-align" && lower === "ennter") return null;
+  if (prop === "text-align" && ["ennter", "cener"].includes(lower)) return null;
   if (prop === "color" && lower === "both") return null;
   // clear 不接受色碼；移除後維持閱讀器忽略無效宣告的級聯，不猜成 color。
   if (prop === "clear" && /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(raw)) return null;
