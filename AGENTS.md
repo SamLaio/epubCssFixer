@@ -105,3 +105,9 @@ re-read whole files.
 After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
+
+## 說明文件分工
+
+- README 先交代用途、適用範圍、安裝與最短可用範例，再連到依操作情境編排的詳細手冊。
+- README 與操作手冊描述目前行為，不放版本更新清單、日期修正紀錄、逐書案例或測試執行歷程；這些集中寫入 CHANGELOG 或 release notes。
+- 新增規則時整合到既有主題章節；參數、輸出、錯誤判讀與限制放在對應用法附近，不在檔尾零散追加。
