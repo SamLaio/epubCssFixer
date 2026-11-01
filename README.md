@@ -67,3 +67,23 @@ EPUBCheck 不是本工具的執行依賴；CSS 掃描通過也不代表 OPF、�
 ## 開發與授權
 
 測試：`node --test`（或 `npm test`）。CLI 在 `bin/epub-css-fixer.js`，CSS 核心在 `src/css.js`，EPUB 處理在 `src/epub.js`。授權 GPL-3.0-or-later，見 [LICENSE](LICENSE)。
+
+## 第三方來源與致謝
+
+### 實際使用的套件
+
+| 專案／作者 | 使用範圍 | 上游授權 |
+| --- | --- | --- |
+| [CSSTree／Roman Dvornov](https://github.com/csstree/csstree) | CSS 語法解析、宣告與值驗證 | MIT |
+| [JSZip／Stuart Knightley、David Duponchel、Franz Buchinger、António Afonso 與貢獻者](https://github.com/Stuk/jszip) | EPUB ZIP 讀寫 | MIT 或 GPL v3 雙重授權 |
+| [Node.js](https://nodejs.org/) | 執行環境與內建測試工具 | Node.js 自身及所含元件依各自授權 |
+
+套件版本見 `package.json` 與鎖定檔；轉遞相依的署名及授權保留於各套件。本專案 GPL-3.0-or-later 不取代這些原有聲明。
+
+### 規範與相容性參考
+
+- [W3C CSS 規範](https://www.w3.org/Style/CSS/)與 [EPUB 3.3](https://www.w3.org/TR/epub-33/)：屬性、值、文字方向與 EPUB 相容性依據。
+- [WHATWG Compatibility Standard](https://compat.spec.whatwg.org/)：WebKit 描邊等相容語法參考。
+- [MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS)：瀏覽器擴充與非標準語法的行為參考。
+
+以上是規範／文件參考，不是複製第三方修復器的程式碼；各類修復例子與規範連結集中於 [修復規則](docs/rules.md)。
