@@ -174,6 +174,8 @@ function repairDeclarationValue(property, value, atruleName = null) {
       if (parts.length > 1 && parts.every(part => ["Number", "Dimension", "Percentage"].includes(part.type))) return null;
     } catch { /* 不猜未知字級，保留給驗證報告。 */ }
   }
+  // 無效寬度不猜成 condensed；維持閱讀器原本忽略宣告的級聯。
+  if (prop === "font-stretch" && lower === "ultra-narrower") return null;
   if (prop === "font-weight" && lower === "thin") return null;
   if (prop === "font-weight" && lower === "auto" && atruleName !== "font-face") return null;
   // none 不是縮排／首選尺寸的合法值；移除以維持原本忽略宣告的級聯。

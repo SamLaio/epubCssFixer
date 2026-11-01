@@ -5,6 +5,13 @@ import { analyzeCss, analyzeDeclarationList, fixCss, fixDeclarationList } from "
 const CSS_FILE_RE = /\.css$/i;
 const HTML_FILE_RE = /\.(xhtml|html|htm)$/i;
 
+function isStylesheet(name, data) {
+  if (CSS_FILE_RE.test(name)) return true;
+  if (name.split('/').at(-1).includes('.')) return false;
+  const text = data.toString('utf8');
+  return !text.includes('\0') && Buffer.from(text, 'utf8').equals(data) && /^\s*@charset\s+["']utf-8["']\s*;/i.test(text);
+}
+
 // XHTML 的 style 是 XML 文字；HTML raw-text 與 CDATA 不解碼實體。
 function styleText(css, text, file) {
   const xml = /\.xhtml$/i.test(file) || /<html\b[^>]*\bxmlns=["']http:\/\/www\.w3\.org\/1999\/xhtml["']/i.test(text);
@@ -77,8 +84,9 @@ export async function scanEpub(path) {
   const issues = [];
   for (const [name, entry] of Object.entries(zip.files)) {
     if (entry.dir) continue;
-    if (CSS_FILE_RE.test(name)) {
-      issues.push(...analyzeCss(await entry.async("string"), { file: name }).issues);
+    if (CSS_FILE_RE.test(name) || !name.split('/').at(-1).includes('.')) {
+      const data = await entry.async("nodebuffer");
+      if (isStylesheet(name, data)) issues.push(...analyzeCss(data.toString('utf8'), { file: name }).issues);
     } else if (HTML_FILE_RE.test(name)) {
       issues.push(...scanHtmlCss(await entry.async("string"), name));
     }
@@ -98,7 +106,7 @@ export async function fixEpub(input, output) {
       continue;
     }
     let data = await entry.async("nodebuffer");
-    if (CSS_FILE_RE.test(name)) {
+    if (isStylesheet(name, data)) {
       const original = data.toString("utf8");
       const result = fixCss(original, { file: name });
       beforeIssues += result.issues.length + result.fixedIssues;

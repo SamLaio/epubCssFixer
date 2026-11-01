@@ -1,4 +1,9 @@
-# epubCssFixer 0.1.8
+# epubCssFixer 0.1.9
+
+## 0.1.9 更新
+
+- 掃描與修復明確UTF-8宣告的無副檔名CSS，補上style_inside漏檢；未知文字與二進位資料保留。
+- 僅移除無效font-stretch:ultra-narrower，不猜字型寬度；保留合法級聯與其他正文資源。
 
 清除實檔核實的 Word 表格樣式私有 `mso-style-name/noshow/unhide/parent`、`mso-tstyle-rowband-size/colband-size`、`mso-padding-alt`、`mso-pagination`、`mso-para-margin`／`mso-para-margin-bottom` 及舊 `layout-grid-mode`；不泛化刪除未知 mso 屬性。舊 `text-autospace:none` 改為標準 `no-autospace`，保留優先權。
 
@@ -197,3 +202,9 @@ node .\bin\epub-css-fixer.js --version
 ```powershell
 node --test
 ```
+
+### 修正紀錄 - 2026-10-31
+
+- 僅移除無效的 `font-stretch:ultra-narrower`（含大小寫及優先權），維持原先忽略無效宣告的級聯，不猜測字型寬度；保留合法值、未知值、自訂屬性與字串，補樣式表、行內及冪等測試。依據：https://www.w3.org/TR/css3-fonts/ 。
+
+- 2026-11-01：scan-epub與fix-epub共用無副檔名CSS辨識；只接受UTF-8完整文字、明確@charset宣告且無NUL的檔案，避免漏查style_inside中的無單位margin。未知文字、其他副檔名與二進位資料保留，補掃描／修復／級聯與不變性測試。

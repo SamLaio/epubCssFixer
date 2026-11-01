@@ -4,7 +4,7 @@
 
 ## 版本
 
-- 目前版本：`0.1.4`
+- 目前版本：`0.1.9`
 - 版本號來源：`package.json`
 - README、CHANGELOG、package.json 的描述要和實際 CLI 行為一致。
 
@@ -17,12 +17,12 @@
 
 ## 核心功能
 
-`0.1.1` 版核心功能如下：
+目前核心功能如下：
 
 - `check`：檢查單一 CSS 檔。
 - `fix`：修復單一 CSS 檔。
-- `scan-epub`：掃描 EPUB 內 `.css`、XHTML/HTML `<style>` 與 inline `style`。
-- `fix-epub`：修復 EPUB 內 `.css`、XHTML/HTML `<style>` 與 inline `style`，輸出新的 EPUB。
+- `scan-epub`：掃描 EPUB 內 `.css`、明確宣告 UTF-8 的無副檔名 CSS、XHTML/HTML `<style>` 與 inline `style`。
+- `fix-epub`：修復 EPUB 內 `.css`、明確宣告 UTF-8 的無副檔名 CSS、XHTML/HTML `<style>` 與 inline `style`，輸出新的 EPUB。
 - 使用 `css-tree` 做 CSS parse 與 property/value 檢查。
 - 使用 `jszip` 讀寫 EPUB zip。
 

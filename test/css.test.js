@@ -910,3 +910,17 @@ test("移除無效undererline裝飾，保留合法級聯與自訂值", () => {
     assert.equal(fixCss(css).css,fixCss(fixCss(css).css).css);
   }
 });
+
+
+test("移除無效 ultra-narrower，保留合法寬度與未知值", () => {
+  const style='font-stretch:condensed;font-stretch:ULTRA-NARROWER!important;--width:ultra-narrower;content:"ultra-narrower"';
+  for (const css of [fixCss(`p{${style}}`).css,`p{${fixDeclarationList(style)}}`]) {
+    assert.doesNotMatch(css,/font-stretch:\s*ultra-narrower/i);
+    assert.match(css,/font-stretch:\s*condensed/);
+    assert.match(css,/--width:\s*ultra-narrower/);
+    assert.match(css,/content:\s*"ultra-narrower"/);
+    assert.equal(analyzeCss(css).ok,true);
+    assert.equal(fixCss(css).css,fixCss(fixCss(css).css).css);
+  }
+  assert.match(fixCss('p{font-stretch:unknown-width}').css,/unknown-width/);
+});
