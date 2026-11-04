@@ -4,7 +4,7 @@
 
 適合在 EPUB 結構修復後檢查樣式，並提供 JSON 給批次流程判讀。OPF、目錄與 XHTML 結構修復請用 epub223。
 
-目前版本：**0.1.9**。版本異動見 [CHANGELOG](CHANGELOG.md)。
+目前版本：**0.1.10**。版本異動見 [CHANGELOG](CHANGELOG.md)。
 
 ## 安裝與快速開始
 
