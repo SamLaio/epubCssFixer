@@ -23,6 +23,8 @@
 
 修復會清除規則明列的非標準宣告，例如 `text-spacing-trim`、舊 `text-combine-horizontal:all`、`text-combine:horizontal`、`duokan-text-indent`、`duokan-bleed`、`oeb-column-number`、`direction`，以及含 `file:`、`res:/`、遠端 HTTP(S) 的 URL 與相關外部 `@import`／`@font-face`。
 
+`ireader-text-indent`、`kindle-text-indent` 也屬已明列的私有宣告；標準 `text-indent` 保留，不將私有值移植為標準值。引用包內相對路徑的合法 `@font-face` 會保留；不會因字型已嵌入就自動設定內文或標題的 `font-family`，仍須由原CSS正確連結。
+
 因此修復後可能改變字型或方向設定。需要特殊排版的書應先檢查工作副本，不直接批次替換原書。合法 WebKit 擴充、現代斷字設定及動態值不會只因語法資料庫不熟悉就全部刪除。
 
 ## HTML／XHTML 安全邊界
