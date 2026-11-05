@@ -37,6 +37,7 @@ function propertyValue(node) {
 
 function isDeniedDeclaration(property, value) {
   const prop = property.toLowerCase();
+  if (prop === "ireader-text-indent" || prop === "kindle-text-indent") return true;
   if (prop === "duokan-text-align") return true;
   if (prop === "adobe-hyphenate") return true;
   if (prop === "layout-grid-mode" || /^mso-(?:style-(?:name|noshow|unhide|parent)|tstyle-(?:rowband|colband)-size|padding-alt|pagination|para-margin(?:-bottom)?)$/.test(prop)) return true;

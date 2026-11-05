@@ -4,7 +4,7 @@
 
 適合在 EPUB 結構修復後檢查樣式，並提供 JSON 給批次流程判讀。OPF、目錄與 XHTML 結構修復請用 epub223。
 
-目前版本：**0.1.10**。版本異動見 [CHANGELOG](CHANGELOG.md)。
+目前版本：**0.1.11**。版本異動見 [CHANGELOG](CHANGELOG.md)。
 
 ## 安裝與快速開始
 
@@ -53,6 +53,8 @@ node .\bin\epub-css-fixer.js --version
 ## 檢查與修復的範圍
 
 掃描涵蓋 `.css`、可確認為 UTF-8 CSS 的無副檔名檔案、內嵌及行內樣式。未知文字或二進位資源不猜成 CSS。行內樣式只讀取真正標籤的屬性，不把跳脫 HTML 範例、註解或程式字串當成樣式。
+
+已知閱讀器私有的 `ireader-text-indent` 與 `kindle-text-indent` 宣告會清除；標準 `text-indent` 保留，不把私有數值改寫成標準縮排，也不泛化清除未知擴充。
 
 使用 css-tree 解析與驗證；修復採已知規則，未知錯誤會留在報告。外部字型與 URL 清理可能改變外觀，採用前應確認字型與排版。分類與代表性規則見 [修復規則與限制](docs/rules.md)。
 

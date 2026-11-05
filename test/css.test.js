@@ -2,6 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { analyzeCss, analyzeDeclarationList, fixCss, fixDeclarationList } from "../src/css.js";
 
+test("清理已知閱讀器私有縮排，保留標準縮排與未知擴充", () => {
+  const style='text-indent:2em;IREADER-TEXT-INDENT:0!important;kindle-text-indent:2em;--kindle-text-indent:1em;content:"kindle-text-indent:0"';
+  for (const css of [fixCss(`p{${style}}`).css,`p{${fixDeclarationList(style)}}`]) {
+    assert.doesNotMatch(css,/(?:\{|;)\s*(?:ireader|kindle)-text-indent:/i);
+    assert.match(css,/text-indent:\s*2em/);
+    assert.match(css,/--kindle-text-indent:\s*1em/);
+    assert.match(css,/content:\s*"kindle-text-indent:0"/);
+    assert.equal(analyzeCss(css).ok,true);
+    assert.equal(fixCss(fixCss(css).css).css,fixCss(css).css);
+  }
+  const unknown=fixCss('p{unknown-text-indent:0;text-indent:2em}');
+  assert.match(unknown.css,/unknown-text-indent:0/);
+  assert.equal(unknown.ok,false);
+});
+
 test("只移除非法cener對齊，不猜center且保留字串與自訂屬性", () => {
   const style='text-align:left;text-align:CENER!important;--align:cener;content:"cener"';
   for (const css of [fixCss(`p{${style}}`).css,`p{${fixDeclarationList(style)}}`]) {
