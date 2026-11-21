@@ -2,6 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { analyzeCss, analyzeDeclarationList, fixCss, fixDeclarationList } from "../src/css.js";
 
+test("清理多看私有首字下沉，保留標準排版與未知擴充", () => {
+  const style='DUOKAN-DROP-CAPS-STYLE:duokan-two-line-caps!important;initial-letter:2;--duokan-drop-caps-style:keep;content:"duokan-drop-caps-style"';
+  for (const css of [fixCss(`p{${style}}`).css,`p{${fixDeclarationList(style)}}`]) {
+    assert.doesNotMatch(css,/(?:\{|;)\s*duokan-drop-caps-style:/i);
+    assert.match(css,/initial-letter:\s*2/);
+    assert.match(css,/--duokan-drop-caps-style:\s*keep/);
+    assert.match(css,/content:\s*"duokan-drop-caps-style"/);
+    assert.equal(analyzeCss(css).ok,true);
+    assert.equal(fixCss(fixCss(css).css).css,fixCss(css).css);
+  }
+  assert.equal(fixCss('p{duokan-unknown-style:keep}').ok,false);
+});
+
 test("清理已知閱讀器私有縮排，保留標準縮排與未知擴充", () => {
   const style='text-indent:2em;IREADER-TEXT-INDENT:0!important;kindle-text-indent:2em;--kindle-text-indent:1em;content:"kindle-text-indent:0"';
   for (const css of [fixCss(`p{${style}}`).css,`p{${fixDeclarationList(style)}}`]) {
@@ -524,6 +537,14 @@ test("@font-face src is treated as a valid descriptor", () => {
   assert.equal(result.ok, true);
 });
 
+test("清除無效字重與空字型來源，保留既有字重與合法字型", () => {
+  const result = fixCss('p{font-weight:400;font-weight:bord!important}@font-face{font-family:Broken;src:none,none none}@font-face{font-family:Book;src:url(book.otf)}');
+  assert.doesNotMatch(result.css, /bord|src:\s*none/);
+  assert.match(result.css, /font-weight:\s*400/);
+  assert.match(result.css, /src:\s*url\(book.otf\)/);
+  assert.equal(analyzeCss(result.css).issues.length, 0);
+});
+
 test("@page margin declarations are treated as CSS properties", () => {
   const result = analyzeCss("@page{margin-top:0px;margin-bottom:0px}");
 
@@ -552,9 +573,17 @@ test("修正 mini-height 並移除誤放的 colspan", () => {
 });
 
 test("修正 margin-left 的常見拼寫錯誤", () => {
-  const result = fixCss("p{margin-lft:1.6em}");
-  assert.equal(result.ok, true);
-  assert.match(result.css, /margin-left:1.6em/);
+  for (const property of ["margin-lft", "margin-lift", "MARGIN-LIFT"]) {
+    const source = `${property}:1.6em!important;--margin-lift:2px;content:"margin-lift"`;
+    const result = fixCss(`p{${source}}`);
+    assert.equal(result.ok, true);
+    assert.match(result.css, /margin-left:1.6em!important/);
+    assert.match(result.css, /--margin-lift:2px/);
+    assert.match(result.css, /content:"margin-lift"/);
+    assert.equal(analyzeCss(`p{${fixDeclarationList(source)}}`).ok, true);
+    assert.equal(fixCss(result.css).css, result.css);
+  }
+  assert.equal(fixCss("p{margin-lift:potato}").ok, false);
 });
 
 test("修正遺漏開頭連字號的 WebKit 文字強調屬性", () => {

@@ -4,7 +4,7 @@
 
 適合在 EPUB 結構修復後檢查樣式，並提供 JSON 給批次流程判讀。OPF、目錄與 XHTML 結構修復請用 epub223。
 
-目前版本：**0.1.11**。版本異動見 [CHANGELOG](CHANGELOG.md)。
+目前版本：**0.2.0**。版本異動見 [CHANGELOG](CHANGELOG.md)。
 
 ## 安裝與快速開始
 
@@ -56,9 +56,9 @@ node .\bin\epub-css-fixer.js --version
 
 `fix`／`fix-epub` 必須指定 `-o`（亦支援 `--output`）；目標已存在時會覆寫，並沒有自動備份。即使結果仍有問題，也可能已寫出修復檔。一般CSS修復還可能改變格式、空白或註解，因此 `changed: true` 不等於修正了錯誤。
 
-已知閱讀器私有的 `ireader-text-indent` 與 `kindle-text-indent` 宣告會清除；標準 `text-indent` 保留，不把私有數值改寫成標準縮排，也不泛化清除未知擴充。
+已知閱讀器私有的 `ireader-text-indent`、`kindle-text-indent` 與多看 `duokan-drop-caps-style` 宣告會清除；標準 `text-indent`、`initial-letter` 保留，不把私有數值改寫成標準排版，也不泛化清除未知擴充。
 
-使用 css-tree 解析與驗證；修復採已知規則，未知錯誤會留在報告。外部字型與 URL 清理可能改變外觀，採用前應確認字型與排版。分類與代表性規則見 [修復規則與限制](docs/rules.md)。
+使用 css-tree 解析與驗證；修復採已知規則，例如將 `margin-lift` 修為 `margin-left`，未知錯誤會留在報告。外部字型與 URL 清理可能改變外觀，採用前應確認字型與排版。分類與代表性規則見 [修復規則與限制](docs/rules.md)。
 
 ## 建議處理順序
 
@@ -91,3 +91,7 @@ EPUBCheck 不是本工具的執行依賴；CSS 掃描通過也不代表 OPF、�
 - [MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS)：瀏覽器擴充與非標準語法的行為參考。
 
 以上是規範／文件參考，不是複製第三方修復器的程式碼；各類修復例子與規範連結集中於 [修復規則](docs/rules.md)。
+
+樣式表檢查會回報空白的選擇器規則。修復會移除這些規則，保留空白的 at-rule（例如用於設定順序的 CSS 層）與動畫關鍵影格。
+
+修復模式會分離可驗證的字級與外距宣告、正規化舊直排值，並移除已確認無效的排版占位值。

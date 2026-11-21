@@ -38,7 +38,7 @@ function propertyValue(node) {
 function isDeniedDeclaration(property, value) {
   const prop = property.toLowerCase();
   if (prop === "ireader-text-indent" || prop === "kindle-text-indent") return true;
-  if (prop === "duokan-text-align") return true;
+  if (prop === "duokan-text-align" || prop === "duokan-drop-caps-style") return true;
   if (prop === "adobe-hyphenate") return true;
   if (prop === "layout-grid-mode" || /^mso-(?:style-(?:name|noshow|unhide|parent)|tstyle-(?:rowband|colband)-size|padding-alt|pagination|para-margin(?:-bottom)?)$/.test(prop)) return true;
   if (prop === "punctuation-wrap" || /^mso-(?:bidi-font-family|(?:hansi|ascii|fareast)-(?:font-family|theme-font))$/.test(prop)) return true;
@@ -85,7 +85,8 @@ function splitSwallowedDeclaration(property, value) {
   if (repairDeclarationProperty(property, value) !== property) return null;
   const empty = value.match(/^([\w-]+)\s*:\s*([^:]+)$/);
   const joined = value.match(/^([^\r\n:]+)[\r\n]+\s*([\w-]+)\s*:\s*([^:]+)$/);
-  const parts = empty ? [[empty[1], empty[2]]] : joined ? [[property, joined[1]], [joined[2], joined[3]]] : null;
+  const fontMargin = property.toLowerCase() === "font-size" && /^([^:\r\n]+?)\s+(margin)\s*:\s*([^:]+)$/i.exec(value);
+  const parts = fontMargin ? [[property, fontMargin[1]], [fontMargin[2], fontMargin[3]]] : empty ? [[empty[1], empty[2]]] : joined ? [[property, joined[1]], [joined[2], joined[3]]] : null;
   if (!parts) return null;
   try {
     return parts.every(([prop, val]) => !prop.startsWith("-") && csstree.lexer.matchProperty(prop, csstree.parse(val, { context: "value" })).matched)
@@ -107,7 +108,8 @@ function repairDeclarationProperty(property, value, atruleName = null) {
   }
   if (prop === "line-hegiht") return "line-height";
   if (prop === "hight" || prop === "heigh" || prop === "heigth") return "height";
-  if (prop === "margin-lft") return "margin-left";
+  if (prop === "margin-lft" || prop === "margin-lift") return "margin-left";
+  if (prop === "with" && /^100%(?:\s*!important)?$/i.test(value.trim())) return "width";
   if (prop === "margin-botom") return "margin-bottom";
   if (prop === "paddin-bottom") return "padding-bottom";
   if (prop === "font-color") return "color";
@@ -140,6 +142,10 @@ function repairDeclarationValue(property, value, atruleName = null) {
   const important = value.match(/\s*!important\s*$/i)?.[0] || "";
   const raw = important ? value.slice(0, -important.length).trim() : value;
   const lower = raw.toLowerCase();
+  if (prop === "writing-mode" && lower === "tb-lr") return "vertical-lr" + important;
+  if ((prop === "line-height" && lower === "auto") ||
+      (prop === "font-weight" && lower === "none" && atruleName !== "font-face") ||
+      (prop === "letter-spacing" && lower === "letterspacingem")) return null;
   if (prop === "text-autospace" && lower === "none") return `no-autospace${important}`;
   if ((prop === "color" || prop.endsWith("-color")) && /^#[a-z]+$/i.test(raw)) {
     const candidate = raw.slice(1);
@@ -177,7 +183,8 @@ function repairDeclarationValue(property, value, atruleName = null) {
   }
   // 無效寬度不猜成 condensed；維持閱讀器原本忽略宣告的級聯。
   if (prop === "font-stretch" && lower === "ultra-narrower") return null;
-  if (prop === "font-weight" && lower === "thin") return null;
+  if (prop === "font-weight" && ["thin", "bord"].includes(lower)) return null;
+  if (prop === "src" && atruleName === "font-face" && /^none(?:[\s,]+none)*$/i.test(raw)) return null;
   if (prop === "font-weight" && lower === "auto" && atruleName !== "font-face") return null;
   // none 不是縮排／首選尺寸的合法值；移除以維持原本忽略宣告的級聯。
   if (["text-indent", "height", "width"].includes(prop) && lower === "none") return null;
@@ -406,6 +413,24 @@ function fallbackFixCss(css) {
   return output;
 }
 
+function isEmptyStyleRule(node, context) {
+  return node.type === "Rule" && node.block?.children.isEmpty &&
+    !context.atrule?.name.toLowerCase().endsWith("keyframes");
+}
+
+export function removeEmptyStyleRules(css) {
+  const ranges = [];
+  const ast = csstree.parse(css, { positions: true });
+  csstree.walk(ast, function (node) {
+    if (isEmptyStyleRule(node, this)) ranges.push(node.loc);
+  });
+  let output = css;
+  for (const { start, end } of ranges.reverse()) {
+    output = output.slice(0, start.offset) + output.slice(end.offset);
+  }
+  return output;
+}
+
 export function analyzeCss(css, options = {}) {
   const source = normalizeCssText(css);
   const issues = [];
@@ -414,6 +439,9 @@ export function analyzeCss(css, options = {}) {
       issues.push({ type: "parse-error", file: options.file, message: error.message, line: error.line, column: error.column });
     } });
     csstree.walk(ast, function (node) {
+      if (isEmptyStyleRule(node, this)) {
+        issues.push({ type: "empty-rule", file: options.file, ...loc(node), message: "空白 CSS 規則" });
+      }
       if (node.type !== "Declaration") return;
       const property = node.property;
       const value = propertyValue(node);
@@ -515,7 +543,7 @@ export function fixCss(css, options = {}) {
         }
       },
     });
-    output = csstree.generate(ast);
+    output = removeEmptyStyleRules(csstree.generate(ast));
   } catch {
     parserFallback = true;
     output = fallbackFixCss(source);

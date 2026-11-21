@@ -10,11 +10,12 @@
 
 | 類型 | 代表例 | 處理方式 |
 | --- | --- | --- |
-| 明確拼字錯誤 | `dispaly`、`margin-botom`、`ont-family`、`heigth` | 改為已確認的標準屬性，修正後仍驗證值 |
+| 明確拼字錯誤 | `dispaly`、`margin-lft`／`margin-lift`、`margin-botom`、`ont-family`、`heigth` | 改為已確認的標準屬性，左外距拼字改為 `margin-left`，修正後仍驗證值 |
 | 字元與語法殘留 | 全形百分號／冒號、頂層 `style_inside;`、可確認的漏分號 | 僅處理可驗證的宣告，不拆字串或 URL |
 | 屬性誤置 | `font-style:bold`、`font-color`、邊框縮寫放進 `border-style` | 已知對應才移至正確屬性 |
 | 舊式語法 | `text-justify:inter-ideograph`、`vertical-align:center` | 分別轉為已知相容寫法 `inter-character`、`middle` |
 | 明確無效值 | `text-align:cener`、`font-stretch:ultra-narrower`、`font-size:normal` | 移除無效宣告，保留先前合法級聯，不猜替代值 |
+| 無效字重與空字型來源 | `font-weight:bord`、僅有 `none` 的 `@font-face src` | 移除無效宣告，保留可用字重和字型來源 |
 | 不合法尺寸 | 直接負寬高、負 padding、`margin-block:3.rem`、多值 `font-size` | 僅移除已證實無效的宣告；合法負 margin、calc／var 保留 |
 | 色碼與優先權 | 可驗證的 `#black`、已知破損色碼、字型列表 misplaced `!important` | 只在能確認合法結果時修復 |
 | 私有與匯出殘留 | 已知 Word `mso-*`、多看、Adobe、`qrfullpage` 等 | 僅清除明列規則；未知 mso 屬性不一律刪除 |
@@ -23,7 +24,7 @@
 
 修復會清除規則明列的非標準宣告，例如 `text-spacing-trim`、舊 `text-combine-horizontal:all`、`text-combine:horizontal`、`duokan-text-indent`、`duokan-bleed`、`oeb-column-number`、`direction`，以及含 `file:`、`res:/`、遠端 HTTP(S) 的 URL 與相關外部 `@import`／`@font-face`。
 
-`ireader-text-indent`、`kindle-text-indent` 也屬已明列的私有宣告；標準 `text-indent` 保留，不將私有值移植為標準值。引用包內相對路徑的合法 `@font-face` 會保留；不會因字型已嵌入就自動設定內文或標題的 `font-family`，仍須由原CSS正確連結。
+`ireader-text-indent`、`kindle-text-indent`、`duokan-drop-caps-style` 也屬已明列的私有宣告；標準 `text-indent` 與 `initial-letter` 保留，不將私有值移植為標準值。引用包內相對路徑的合法 `@font-face` 會保留；不會因字型已嵌入就自動設定內文或標題的 `font-family`，仍須由原CSS正確連結。
 
 因此修復後可能改變字型或方向設定。需要特殊排版的書應先檢查工作副本，不直接批次替換原書。合法 WebKit 擴充、現代斷字設定及動態值不會只因語法資料庫不熟悉就全部刪除。
 
